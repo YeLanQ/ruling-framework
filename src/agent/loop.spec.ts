@@ -35,6 +35,87 @@ describe("agent loop", () => {
     expect(provider.requests).toHaveLength(0);
   });
 
+  it("returns suggestions for an advisory task without calling the model", async () => {
+    const { engine } = opc();
+    const provider = new MockProvider([]);
+    const result = await runAgent({
+      provider,
+      model: "mock",
+      task: "如何交付",
+      engine,
+      trust: "agent"
+    });
+    expect(result.mode).toBe("suggest");
+    expect(result.stoppedReason).toBe("suggestion");
+    expect(result.suggestions?.length).toBeGreaterThan(0);
+    expect(provider.requests).toHaveLength(0);
+  });
+
+  it("stops ambiguous tasks for clarification without calling the model", async () => {
+    const { engine } = opc();
+    const provider = new MockProvider([]);
+    const result = await runAgent({
+      provider,
+      model: "mock",
+      task: "写文档或者构建",
+      engine,
+      trust: "agent"
+    });
+    expect(result.mode).toBe("fuzzy");
+    expect(result.stoppedReason).toBe("needs-clarification");
+    expect(result.ambiguities?.length).toBeGreaterThan(0);
+    expect(provider.requests).toHaveLength(0);
+  });
+
+  it("re-plans after a clarification answer", async () => {
+    const { root, engine } = opc();
+    const provider = new MockProvider([
+      toolCall("doc_write", { path: "a.md", content: "x" }),
+      text("完成")
+    ]);
+    const result = await runAgent({
+      provider,
+      model: "mock",
+      task: "写文档或者构建",
+      engine,
+      trust: "agent",
+      onClarify: () => "写文档",
+      onConfirm: () => true
+    });
+    expect(result.stoppedReason).toBe("done");
+    expect(existsSync(join(root, "a.md"))).toBe(true);
+  });
+
+  it("runs NormSpec before planning when normalization is enabled", async () => {
+    const { root, engine } = opc();
+    const provider = new MockProvider([
+      text(
+        JSON.stringify({
+          taskType: "edit",
+          taskDescription: "写交付文档",
+          anchors: ["交付"],
+          fileRefs: [],
+          ambiguities: [],
+          confidence: 0.9
+        })
+      ),
+      toolCall("doc_write", { path: "normalized.md", content: "x" }),
+      text("完成")
+    ]);
+    const result = await runAgent({
+      provider,
+      model: "mock",
+      task: "把交付弄一下",
+      engine,
+      trust: "agent",
+      normalize: true,
+      onConfirm: () => true
+    });
+    expect(result.normalized?.taskDescription).toBe("写交付文档");
+    expect(result.stoppedReason).toBe("done");
+    expect(existsSync(join(root, "normalized.md"))).toBe(true);
+  });
+
   it("executes a tool after human approval and then finishes", async () => {
     const { root, engine } = opc();
     const provider = new MockProvider([
@@ -45,7 +126,7 @@ describe("agent loop", () => {
     const result = await runAgent({
       provider,
       model: "mock",
-      task: "写说明",
+      task: "写入文档",
       engine,
       trust: "agent",
       onConfirm: () => true,
@@ -66,7 +147,7 @@ describe("agent loop", () => {
     const result = await runAgent({
       provider,
       model: "mock",
-      task: "写说明",
+      task: "写入文档",
       engine,
       trust: "agent",
       onConfirm: () => false
@@ -82,7 +163,7 @@ describe("agent loop", () => {
     const result = await runAgent({
       provider,
       model: "mock",
-      task: "写说明",
+      task: "写入文档",
       engine,
       trust: "agent",
       onEvent: (event) => events.push(event)
@@ -98,7 +179,7 @@ describe("agent loop", () => {
     const result = await runAgent({
       provider,
       model: "mock",
-      task: "循环",
+      task: "写入文档",
       engine,
       trust: "agent",
       maxRounds: 2
@@ -114,7 +195,7 @@ describe("agent loop", () => {
     const result = await runAgent({
       provider,
       model: "mock",
-      task: "写说明",
+      task: "写入文档",
       engine,
       trust: "agent",
       onConfirm: () => false
@@ -132,7 +213,7 @@ describe("agent loop", () => {
     await runAgent({
       provider,
       model: "mock",
-      task: "读一读",
+      task: "读取文件",
       engine,
       trust: "agent",
       contextK: 1,

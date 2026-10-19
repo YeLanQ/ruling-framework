@@ -12,7 +12,7 @@
 
 ```bash
 pnpm install
-pnpm verify          # typecheck + 124 tests + 两个端到端 demo
+pnpm verify          # typecheck + 136 tests + 两个端到端 demo
 pnpm demo            # OPC：绿/黄/红、审批、未知动作、Agent 循环、审计
 pnpm demo:industrial # 工业设计：动态红灯、格式锁、版本溯源
 ```
@@ -91,6 +91,7 @@ CLI / HTTP / MCP / SDK
         │
         ▼
 Agent 循环（提议层，可替换）
+  · NormSpec 前置归一化（可选、非裁决、失败回落）
   · OpenAI 兼容 Provider
   · 弱模型护栏、上下文预算、正文工具方言
         │  proposals only
@@ -105,7 +106,7 @@ RulingEngine（唯一执行入口）
 Workspace（受控文件系统）/ 行业适配器
 ```
 
-大脑前置（`engine.prepare`）会在模型主推理前完成分段、知识路由、候选动作预测，并在唯一高置信度绿灯动作时直接执行、完全不经过 LLM。
+大脑前置（`engine.prepare`）会在模型主推理前完成分段、知识路由、候选动作预测，并把任务分为 `direct`（绿灯直达）、`assist`（助手提议）、`fuzzy`（先澄清）、`suggest`（只给建议）。只有唯一高置信度绿灯动作会完全绕过 LLM。
 
 ---
 
@@ -120,7 +121,7 @@ ruling-framework/
 │  ├─ adapters/        # CLI / HTTP / MCP
 │  ├─ demo/            # 两个端到端演示
 │  └─ test-support/    # 测试临时目录
-├─ docs/               # 9 篇设计文档
+├─ docs/               # 10 篇设计文档
 └─ package.json
 ```
 
@@ -147,6 +148,7 @@ ruling-framework/
   - `extended`：运行时经验，写入 `.ruling/knowledge/experience.jsonl`。
   - `error`：失败教训，写入 `.ruling/knowledge/errors.jsonl`；`lesson.add` 登记人工复盘，执行失败自动生成 `failure:<action>`。
 - **外部知识源**：JSON、JSONL、Markdown 目录、HTTP JSON，配置在 `.ruling/config.json` 的 `knowledge.external`；只读加载，不复制进本地库。
+- **前置归一化与任务分层**：NormSpec 只做语言归一化、失败回落；planner 把任务分为 `direct`（绿灯直达）、`assist`（助手提议）、`fuzzy`（先澄清）、`suggest`（只给建议）。
 - **语义化管理**：命名空间、领域、别名、状态（draft/active/deprecated）、置信度、版本、替代关系；同义词扩展与混合检索；`knowledge.review`、`knowledge.deprecate`、`knowledge.merge` 生命周期动作；`knowledge dedupe` 与 `knowledge conflicts` 检查。
 - **哈希嵌入**：ASCII 词元 + CJK 单字/二元组，FNV-1a，128 桶，i8 量化；确定性、零依赖。
 - **图谱**：`mentions / uses / caused / coOccurs`，14 天半衰期，低于 0.02 修剪。
@@ -161,7 +163,7 @@ ruling-framework/
 ## 验证状态（2026-10-19）
 
 - `pnpm typecheck`：通过（strict）。
-- `pnpm test`：21 个测试文件，124 个用例全部通过。
+- `pnpm test`：22 个测试文件，136 个用例全部通过。
 - `pnpm demo`：OPC 端到端通过。
 - `pnpm demo:industrial`：工业设计端到端通过。
 - `pnpm build`：通过。

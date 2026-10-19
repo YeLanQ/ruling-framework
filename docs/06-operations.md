@@ -115,8 +115,15 @@ export RULING_MODEL=qwen2.5:7b
 export RULING_API_KEY=
 pnpm ruling ask "写一份交付说明并构建" --yes
 
-# 没有模型时用启发式 Provider
+# 关闭 NormSpec 前置归一化
+pnpm ruling ask "写一份交付说明并构建" --no-normalize
+
+# 没有模型时用启发式 Provider（默认跳过归一化）
 pnpm ruling ask "查看工作区" --mock --json
+
+# 问句 → 只给建议；模糊任务 → 请求澄清
+pnpm ruling ask "如何交付" --mock --json
+pnpm ruling ask "写文档或者构建" --mock --json
 
 # 审计
 pnpm ruling audit
@@ -134,6 +141,16 @@ pnpm ruling audit export --format json
 - 宿主应用：实现自己的 `onConfirm` 回调。
 
 跨进程持久化审批被明确禁止。
+
+### 3.2 前置归一化与任务分层
+
+- 真实模型下 `ask` 默认先跑一次 NormSpec：只做语言归一化，不决策、不调工具、失败回落；
+- `--mock` 默认跳过归一化，避免消耗脚本回合；
+- `--no-normalize` 可显式关闭；
+- 输出模式：`direct`（绿灯直达）、`assist`（助手提议）、`fuzzy`（需澄清）、`suggest`（只给建议）；
+- `fuzzy`/`suggest` 不会执行任何动作；`--json` 会返回 `mode`、`ambiguities`、`suggestions` 与 `stoppedReason`。
+
+详见 [`09-normalization-and-modes.md`](09-normalization-and-modes.md)。
 
 ## 4. 真实模型
 
@@ -299,6 +316,8 @@ if (outcome.status === "needConfirm") {
 | JSONL 中某条知识不生效 | 该行 JSON 损坏 | 修复该行；加载器会跳过坏行 |
 | 语义检索不命中 | 缺别名/同义词，或状态为 deprecated | 补 `aliases`/`synonyms.json`，或查看 `--status` |
 | `knowledge.merge` 找不到单元 | id 拼写或命名空间不同 | 先用 `knowledge search`/`list` 确认 id |
+| `ask` 返回 `suggestion` | 问句/咨询或没有匹配动作 | 这是预期行为；根据建议把任务说得更具体 |
+| `ask` 返回 `needs-clarification` | 表述模糊或候选接近 | 补充对象、动作与目标后重跑；库调用可提供 `onClarify` |
 | 模型总是 needConfirm | 默认 trust 是 agent | `--trust operator` 或批准 |
 
 ## 10. 重置

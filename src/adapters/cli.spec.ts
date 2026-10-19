@@ -229,6 +229,26 @@ describe("CLI adapter", () => {
     );
   });
 
+  it("returns suggestions for advisory tasks in mock mode", async () => {
+    await run(["init", "--pack", "opc"]);
+    const result = await run(["ask", "如何交付", "--mock", "--json"]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      mode: "suggest",
+      stoppedReason: "suggestion"
+    });
+  });
+
+  it("returns clarification for ambiguous tasks in mock mode", async () => {
+    await run(["init", "--pack", "opc"]);
+    const result = await run(["ask", "写文档或者构建", "--mock", "--json"]);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      mode: "fuzzy",
+      stoppedReason: "needs-clarification"
+    });
+  });
+
   it("runs the direct green path in mock mode", async () => {
     await run(["init", "--pack", "opc"]);
     const result = await run(["ask", "查看工作区", "--mock", "--json"]);

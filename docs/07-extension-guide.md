@@ -123,6 +123,8 @@ class MyProvider implements ChatProvider {
 - 工具调用名必须与 `toToolName(actionId)` 一致；
 - 不支持原生工具调用时，可以返回正文 JSON，由 `agent/dialect.ts` 兜底解析；
 - 不要在执行器之外直接执行动作；所有调用交给 `RulingEngine.execute`。
+- 若开启 `runAgent({ normalize: true })`，Provider 还会收到一次 NormSpec 请求；它必须只返回结构化 JSON，不能调用工具。无法稳定输出 JSON 的模型请关闭归一化。
+- 模糊任务会走 `onClarify` 回调；不提供回调时只返回建议，不执行。
 
 ## 4. 自定义适配器
 
@@ -225,6 +227,9 @@ engine.surface.knowledge.addMany(units);
 - [ ] 外部知识源加载成功且不落本地库。
 - [ ] `lesson.add` 写入 errors.jsonl。
 - [ ] 失败执行生成 `failure:<action>` 并带原因。
+- [ ] NormSpec 坏输出/超时回落规则链路。
+- [ ] direct/assist/fuzzy/suggest 分类符合预期。
+- [ ] fuzzy/suggest 不执行任何动作。
 
 ## 8. 上线检查
 

@@ -65,6 +65,68 @@ interface ExecuteOutcome {
 - `decision` 是裁定结论；
 - `status` 是执行结果：`needConfirm` 表示没有执行，`ok` 表示执行成功，`error` 表示执行器或边界失败。
 
+## 3.5 前置归一化与任务分层
+
+```ts
+type TaskMode = "direct" | "assist" | "fuzzy" | "suggest";
+
+interface NormalizedTask {
+  taskType: "query" | "edit" | "create" | "delete" | "build" | "analyze" | "chat";
+  taskDescription: string;
+  anchors: string[];
+  fileRefs: string[];     // 只验证存在性，不读取内容
+  ambiguities: string[];
+  confidence: number;
+}
+
+interface TaskUnit {
+  text: string;
+  mode: TaskMode;
+  action?: string;
+  confidence: number;
+  reason: string;
+}
+
+interface PreparedContext {
+  task: string;
+  segments: string[];
+  units: TaskUnit[];
+  candidates: ActionCandidate[];
+  knowledge: KnowledgeHit[];
+  mode: TaskMode;
+  ambiguities: string[];
+  suggestions: string[];
+  normalized?: NormalizedTask;
+  direct?: { action: string; params?: Record<string, unknown>; reason: string };
+}
+```
+
+语义：
+
+- `NormalizedTask` 只做语言归一化，不参与门控；失败/坏 JSON/空描述 → `undefined`，规则链路照常运行。
+- `direct`：唯一绿灯、无参、分数 ≥ 2、明显领先；`runAgent` 直接执行。
+- `assist`：交给 Agent 提议，工具调用仍过门控。
+- `fuzzy`：停止执行，请求澄清；`onClarify` 返回补充后只重规划一次。
+- `suggest`：只返回建议，不请求模型、不执行。
+- 审批键始终是**用户原始任务文本**，不是归一化后的描述。
+
+Agent 结果：
+
+```ts
+interface AgentResult {
+  content: string;
+  rounds: number;
+  toolCalls: number;
+  mode: TaskMode;
+  suggestions?: string[];
+  ambiguities?: string[];
+  normalized?: NormalizedTask;
+  stoppedReason:
+    | "done" | "direct" | "suggestion" | "needs-clarification"
+    | "max-rounds" | "repeated-failure" | "error";
+}
+```
+
 ## 4. 门控真值表
 
 ```ts

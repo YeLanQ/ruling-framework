@@ -34,6 +34,7 @@ import type {
   ApprovalPolicy,
   ExecuteOutcome,
   ExecuteRequest,
+  NormalizedTask,
   Plan,
   PreparedContext
 } from "./types.js";
@@ -113,12 +114,13 @@ export class RulingEngine {
     this.approvals.approve(task, role ?? this.surface.defaultRole, this.now());
   }
 
-  prepare(task: string): PreparedContext {
+  prepare(task: string, normalized?: NormalizedTask): PreparedContext {
     return prepareContext({
       task,
       catalog: this.surface.catalog,
       knowledge: this.surface.knowledge,
-      now: this.now()
+      now: this.now(),
+      ...(normalized ? { normalized } : {})
     });
   }
 

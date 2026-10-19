@@ -107,6 +107,7 @@ export async function runAsk(
     trust: context.trust,
     role: context.role,
     allowDirect: true,
+    normalize: argv.flags.mock !== true && argv.flags["no-normalize"] !== true,
     onConfirm: (request) => confirmRequest(io, argv.flags, request),
     onEvent: (event) => {
       if (json) return;
@@ -116,6 +117,14 @@ export async function runAsk(
       }
       if (event.type === "confirm") {
         io.stdout(`[confirm] ${event.request.action}：${event.request.reason}\n`);
+      }
+      if (event.type === "suggest") {
+        io.stdout(`[suggest]\n${event.suggestions.map((item) => `- ${item}`).join("\n")}\n`);
+      }
+      if (event.type === "clarify") {
+        io.stdout(
+          `[clarify] ${event.question}\n${event.suggestions.map((item) => `- ${item}`).join("\n")}\n`
+        );
       }
       if (event.type === "guard") io.stdout(`[guard] ${event.message}\n`);
       if (event.type === "error") io.stderr(`[error] ${event.message}\n`);

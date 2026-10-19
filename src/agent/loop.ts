@@ -1,6 +1,7 @@
 // The proposal loop. Guard rails keep weak models from spinning, but every
 // tool call still passes through RulingEngine.execute; the loop never grants
-// itself permission.
+// itself permission. Fuzzy tasks stop for clarification; advisory tasks return
+// suggestions without executing anything.
 
 import {
   DEFAULT_CONTEXT_K,
@@ -10,6 +11,7 @@ import {
   looksLikeCompletion
 } from "./context.js";
 import { parseInlineToolCalls } from "./dialect.js";
+import { normalizeTaskSpec } from "./nl-normalize.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { toToolName } from "./tool-names.js";
 import type {
@@ -28,21 +30,96 @@ export async function runAgent(options: AgentOptions): Promise<AgentResult> {
   const maxRounds = options.maxRounds ?? DEFAULT_MAX_ROUNDS;
   const contextK = options.contextK ?? DEFAULT_CONTEXT_K;
 
-  const prepared = engine.prepare(task);
-  if (options.allowDirect !== false && prepared.direct) {
+  const normalized = options.normalize
+    ? await normalizeTaskSpec(options.provider, options.model, task, {
+        fileExists: (path) => engine.workspace.exists(path)
+      })
+    : undefined;
+  let prepared = engine.prepare(normalized?.taskDescription ?? task, normalized);
+
+  const resultBase = (
+    content: string,
+    stoppedReason: AgentResult["stoppedReason"],
+    toolCalls = 0,
+    rounds = 0
+  ): AgentResult => ({
+    content,
+    rounds,
+    toolCalls,
+    mode: prepared.mode,
+    ...(prepared.suggestions.length > 0 ? { suggestions: prepared.suggestions } : {}),
+    ...(prepared.ambiguities.length > 0 ? { ambiguities: prepared.ambiguities } : {}),
+    ...(normalized ? { normalized } : {}),
+    stoppedReason
+  });
+
+  const runDirect = async (): Promise<AgentResult | undefined> => {
+    if (options.allowDirect === false || !prepared.direct) return undefined;
+    const direct = prepared.direct;
     const outcome = await engine.execute({
       task,
-      action: prepared.direct.action,
-      params: prepared.direct.params ?? {},
+      action: direct.action,
+      params: direct.params ?? {},
       trust: options.trust,
       actor: { role },
       source: "assistant"
     });
-    if (outcome.status === "ok") {
-      const content = `已直接执行 ${prepared.direct.action}：${prepared.direct.reason}`;
-      emit({ type: "text", content });
+    if (outcome.status !== "ok") return undefined;
+    const content = `已直接执行 ${direct.action}：${direct.reason}`;
+    emit({ type: "text", content });
+    emit({ type: "done", content });
+    return resultBase(content, "direct", 1, 0);
+  };
+
+  const direct = await runDirect();
+  if (direct) return direct;
+
+  const suggestionText = (): string => {
+    const head =
+      prepared.mode === "fuzzy"
+        ? `任务存在歧义：${prepared.ambiguities.join("；") || "请补充对象、动作或目标"}。`
+        : "当前任务更适合先给建议：";
+    const list =
+      prepared.suggestions.length > 0
+        ? `\n建议：\n- ${prepared.suggestions.join("\n- ")}`
+        : "";
+    return `${head}${list}`;
+  };
+
+  if (prepared.mode === "suggest") {
+    emit({ type: "suggest", suggestions: prepared.suggestions });
+    const content = suggestionText();
+    emit({ type: "done", content });
+    return resultBase(content, "suggestion");
+  }
+
+  if (prepared.mode === "fuzzy") {
+    const question = prepared.ambiguities.join("；") || "请补充对象、动作或目标";
+    emit({ type: "clarify", question, suggestions: prepared.suggestions });
+    let answer: string | undefined;
+    if (options.onClarify) {
+      try {
+        answer = await options.onClarify({ task, question, suggestions: prepared.suggestions });
+      } catch {
+        answer = undefined;
+      }
+    }
+    if (!answer?.trim()) {
+      const content = suggestionText();
       emit({ type: "done", content });
-      return { content, rounds: 0, toolCalls: 1, stoppedReason: "direct" };
+      return resultBase(content, "needs-clarification");
+    }
+
+    prepared = engine.prepare(answer.trim(), normalized);
+    const afterDirect = await runDirect();
+    if (afterDirect) return afterDirect;
+    if (prepared.mode === "suggest" || prepared.mode === "fuzzy") {
+      const content = suggestionText();
+      emit({ type: "done", content });
+      return resultBase(
+        content,
+        prepared.mode === "suggest" ? "suggestion" : "needs-clarification"
+      );
     }
   }
 
@@ -87,13 +164,16 @@ export async function runAgent(options: AgentOptions): Promise<AgentResult> {
   let lastContent = "";
   const failures = new Map<string, number>();
 
-  const finish = (content: string, stoppedReason: AgentResult["stoppedReason"]): AgentResult => {
+  const finish = (
+    content: string,
+    stoppedReason: AgentResult["stoppedReason"]
+  ): AgentResult => {
     if (options.session) {
       const toSave = messages.filter((message) => message.role !== "system");
       options.session.store.save(options.session.id, toSave);
     }
     emit({ type: "done", content });
-    return { content, rounds, toolCalls: toolCallsMade, stoppedReason };
+    return resultBase(content, stoppedReason, toolCallsMade, rounds);
   };
 
   const resolveName = (name: string): string | undefined => nameToAction.get(name);

@@ -42,6 +42,7 @@
 | 执行入口 | `core/engine.ts` + `engine-{preflight,execute,plan,state,audit}.ts` | 唯一执行链、预检、计划建议、快照 |
 | 知识 | `core/knowledge/*` | 三层分离、语义元数据/检索、外部源、图谱、冷热、gzip 状态 |
 | 提议循环 | `agent/loop.ts` + `agent/context.ts` | Provider 调用、护栏、上下文预算 |
+| 前置归一化 | `agent/nl-normalize.ts` | NormSpec：结构化用户输入，非裁决、失败回落 |
 | Provider | `agent/provider.ts` | OpenAI 兼容 `/chat/completions` |
 | 方言 | `agent/dialect.ts` | 正文 JSON/标签工具调用兜底 |
 | 会话 | `agent/session.ts` | 原子 JSON 文档 |
@@ -93,26 +94,35 @@ sequenceDiagram
 `engine.prepare(task)` 是确定性函数：
 
 1. **分段**：标点、换行、连接词，最多 8 段。
-2. **知识路由**：哈希嵌入余弦 + 一跳邻接加成 + 类型先验（seed > error > extended）。
+2. **知识路由**：哈希嵌入余弦 + 一跳邻接加成 + 类型先验（seed > error > extended），叠加别名/同义词/领域/状态权重。
 3. **候选动作**：动作关键词/标题匹配，加上知识单元 `uses` 边。
-4. **分流**：
-   - 唯一绿灯候选、分数 ≥ 2、无参、明显领先、无黄灯竞争 → `direct`，不经 LLM；
-   - 其余交给 Agent 循环。
+4. **语义单元分类**：
+   - `direct`：唯一绿灯候选、分数 ≥ 2、无参、明显领先；
+   - `assist`：有明确候选但需要参数、写操作或多步骤；
+   - `fuzzy`：候选接近，或表述含“或者/还是/随便/处理一下”等；
+   - `suggest`：问句/咨询，或没有匹配动作。
+5. **整体模式**：任一 fuzzy → fuzzy；全部 suggest → suggest；单单元 direct → direct；其余有可执行单元 → assist。
+
+可选的前置归一化（NormSpec）在 `prepare` 之前运行：它只把口语转写为结构化任务描述，不做决策、不调工具、失败回落；归一化结果只影响规划输入，不改变权限。详见 [09 前置归一化与任务分层](09-normalization-and-modes.md)。
 
 `PreparedContext` 注入系统提示，模型只在这个边界内提出调用。
 
 ## 5. Agent 循环
 
 ```text
-prepare() → messages(system + history + task)
-  └─ provider.chat(tools)
-       ├─ 原生 tool_calls
-       ├─ 正文 JSON/标签方言兜底
-       └─ 无调用：完成/假完成守卫/空回复救援
-  └─ 每个 tool_call → engine.execute
-       ├─ needConfirm → 人机回调 → approve → 重试一次
-       ├─ denied/error → 作为工具结果回喂
-       └─ ok → 回喂结果，继续
+[NormSpec 可选] → prepare()
+  ├─ direct  → engine.execute（不经 LLM）
+  ├─ suggest → 返回建议（不调模型、不执行）
+  ├─ fuzzy   → 请求澄清；有 onClarify 则重规划一次，否则返回 needs-clarification
+  └─ assist  → messages(system + history + task)
+       └─ provider.chat(tools)
+            ├─ 原生 tool_calls
+            ├─ 正文 JSON/标签方言兜底
+            └─ 无调用：完成/假完成守卫/空回复救援
+       └─ 每个 tool_call → engine.execute
+            ├─ needConfirm → 人机回调 → approve → 重试一次
+            ├─ denied/error → 作为工具结果回喂
+            └─ ok → 回喂结果，继续
 ```
 
 护栏：

@@ -1,5 +1,6 @@
 export * from "./types.js";
 export * from "./context.js";
+export * from "./nl-normalize.js";
 export * from "./provider.js";
 export * from "./mock-provider.js";
 export * from "./heuristic-provider.js";

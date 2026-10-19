@@ -42,6 +42,30 @@ export function buildSystemPrompt(input: PromptInput): string {
       lines.push(`  - [${hit.id}] ${hit.title} — ${hit.summary}`);
     }
   }
+  lines.push(`- 任务模式：${prepared.mode}`);
+  if (prepared.units.length > 0) {
+    lines.push("- 语义单元：");
+    for (const unit of prepared.units) {
+      lines.push(
+        `  - 「${unit.text}」→ ${unit.mode}${unit.action ? `（${unit.action}）` : ""}：${unit.reason}`
+      );
+    }
+  }
+  if (prepared.ambiguities.length > 0) {
+    lines.push(`- 歧义：${prepared.ambiguities.join("；")}`);
+  }
+  if (prepared.suggestions.length > 0) {
+    lines.push("- 建议：");
+    for (const suggestion of prepared.suggestions) lines.push(`  - ${suggestion}`);
+  }
+  if (prepared.normalized) {
+    lines.push(
+      `- 前置归一化：type=${prepared.normalized.taskType}；描述=${prepared.normalized.taskDescription}；置信度=${prepared.normalized.confidence}`
+    );
+    if (prepared.normalized.fileRefs.length > 0) {
+      lines.push(`  - 文件引用：${prepared.normalized.fileRefs.join(", ")}`);
+    }
+  }
   lines.push("");
   lines.push("可用工具：");
   for (const tool of tools) {

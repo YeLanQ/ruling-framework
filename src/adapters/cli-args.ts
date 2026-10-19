@@ -41,7 +41,7 @@ Usage:
   ruling knowledge stats [--json]
   ruling exec <action> --task <text> [--params <json>] [--role <role>] [--trust agent|operator] [--yes] [--json]
   ruling plan <action...> --task <text> [--json]
-  ruling ask <task...> [--mock] [--yes] [--model <name>] [--json]
+  ruling ask <task...> [--mock] [--yes] [--model <name>] [--no-normalize] [--json]
   ruling audit [verify|export] [--format md|json]
   ruling serve --http [--port 39100] [--token <token>] [--trust operator|agent]
   ruling serve --mcp [--trust operator|agent] [--role <role>]

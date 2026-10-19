@@ -120,3 +120,4 @@ Ruling Framework 是一个**通用裁定权大模型框架**。它假设模型�
 | [06 操作](06-operations.md) | 安装、CLI、HTTP、MCP、故障排查 |
 | [07 扩展指南](07-extension-guide.md) | 自定义动作、执行器、区域、Provider 与适配器 |
 | [08 局限](08-limitations.md) | 安全边界、未覆盖项、诚实的能力声明 |
+| [09 前置归一化与任务分层](09-normalization-and-modes.md) | NormSpec、direct/assist/fuzzy/suggest、澄清与建议 |

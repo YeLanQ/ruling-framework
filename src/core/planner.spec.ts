@@ -41,6 +41,16 @@ const actions: ActionSpec[] = [
       properties: { path: { type: "string" }, content: { type: "string" } },
       required: ["path", "content"]
     }
+  },
+  {
+    id: "project.build",
+    title: "构建项目",
+    description: "build",
+    keywords: ["构建"],
+    group: "build",
+    zone: "yellow",
+    speedBudgetMs: 120000,
+    energyWeight: 3
   }
 ];
 
@@ -53,7 +63,7 @@ describe("brain-first planner", () => {
     expect(segmentTask(long)).toHaveLength(8);
   });
 
-  it("routes knowledge and picks a direct green action", () => {
+  it("classifies a unique green action as direct", () => {
     const knowledge = new KnowledgeStore([
       {
         id: "seed:read",
@@ -65,26 +75,49 @@ describe("brain-first planner", () => {
       }
     ]);
     const prepared = prepareContext({ task: "列出文件", catalog, knowledge });
+    expect(prepared.mode).toBe("direct");
     expect(prepared.direct?.action).toBe("workspace.list");
+    expect(prepared.units[0]?.mode).toBe("direct");
     expect(prepared.knowledge.length).toBeGreaterThan(0);
   });
 
-  it("does not direct-execute a yellow action", () => {
+  it("classifies an actionable non-green task as assist", () => {
     const knowledge = new KnowledgeStore();
     const prepared = prepareContext({ task: "写文档", catalog, knowledge });
+    expect(prepared.mode).toBe("assist");
     expect(prepared.direct).toBeUndefined();
+    expect(prepared.units[0]?.mode).toBe("assist");
     expect(prepared.candidates[0]?.action.id).toBe("doc.write");
   });
 
-  it("does not direct-execute when a non-green candidate competes", () => {
+  it("classifies a question as suggest with suggestions", () => {
+    const knowledge = new KnowledgeStore();
+    const prepared = prepareContext({ task: "如何交付", catalog, knowledge });
+    expect(prepared.mode).toBe("suggest");
+    expect(prepared.suggestions.length).toBeGreaterThan(0);
+    expect(prepared.direct).toBeUndefined();
+  });
+
+  it("classifies ambiguous wording or close candidates as fuzzy", () => {
+    const knowledge = new KnowledgeStore();
+    const prepared = prepareContext({ task: "写文档或者构建", catalog, knowledge });
+    expect(prepared.mode).toBe("fuzzy");
+    expect(prepared.ambiguities.length).toBeGreaterThan(0);
+    expect(prepared.suggestions.length).toBeGreaterThan(0);
+  });
+
+  it("classifies a multi-step task as assist", () => {
     const knowledge = new KnowledgeStore();
     const prepared = prepareContext({ task: "列出文件然后写文档", catalog, knowledge });
+    expect(prepared.mode).toBe("assist");
+    expect(prepared.units).toHaveLength(2);
     expect(prepared.direct).toBeUndefined();
   });
 
   it("does not direct-execute an action that requires parameters", () => {
     const knowledge = new KnowledgeStore();
     const prepared = prepareContext({ task: "读取文件", catalog, knowledge });
+    expect(prepared.mode).toBe("assist");
     expect(prepared.direct).toBeUndefined();
   });
 });

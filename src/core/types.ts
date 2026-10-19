@@ -159,6 +159,35 @@ export interface KnowledgeHit {
   confidence?: number;
 }
 
+export type TaskMode = "direct" | "assist" | "fuzzy" | "suggest";
+
+export type NormalizedTaskType =
+  | "query"
+  | "edit"
+  | "create"
+  | "delete"
+  | "build"
+  | "analyze"
+  | "chat";
+
+/** Non-adjudicative language normalization result. */
+export interface NormalizedTask {
+  taskType: NormalizedTaskType;
+  taskDescription: string;
+  anchors: string[];
+  fileRefs: string[];
+  ambiguities: string[];
+  confidence: number;
+}
+
+export interface TaskUnit {
+  text: string;
+  mode: TaskMode;
+  action?: string;
+  confidence: number;
+  reason: string;
+}
+
 export interface ActionCandidate {
   action: ActionSpec;
   score: number;
@@ -168,8 +197,13 @@ export interface ActionCandidate {
 export interface PreparedContext {
   task: string;
   segments: string[];
+  units: TaskUnit[];
   candidates: ActionCandidate[];
   knowledge: KnowledgeHit[];
+  mode: TaskMode;
+  ambiguities: string[];
+  suggestions: string[];
+  normalized?: NormalizedTask;
   /** A single high-confidence, parameterless green action can run without the LLM. */
   direct?: { action: string; params?: Record<string, unknown>; reason: string };
 }

@@ -1,0 +1,84 @@
+name: ci
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖（锁文件冻结）
+        run: pnpm install --frozen-lockfile
+
+      # 六类门禁分步执行，失败点一目了然（等价 pnpm gate）
+      - name: 行尾门禁（LF）
+        run: pnpm check:eol
+      - name: 语法门禁
+        run: pnpm check:syntax
+      - name: 类型门禁
+        run: pnpm typecheck
+      - name: 语义门禁
+        run: pnpm lint:semantic
+      - name: 质量门禁
+        run: pnpm lint
+      - name: 漏洞门禁
+        run: pnpm audit --audit-level high
+      - name: 测试
+        run: pnpm test
+      - name: 构建
+        run: pnpm build
+      - name: OPC 端到端 demo
+        run: pnpm demo
+      - name: 工业设计端到端 demo
+        run: pnpm demo:industrial
+
+  release:
+    name: release-artifact
+    needs: gate
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.24.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: 安装依赖（锁文件冻结）
+        run: pnpm install --frozen-lockfile
+
+      - name: 构建产物
+        run: pnpm build
+
+      - name: 上传 dist 产物
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruling-framework-dist
+          path: dist/
+          retention-days: 30
+
+      # 如需发布 npm 包：在实例配置 NPM_TOKEN secret 后取消注释。
+      # - name: 发布 npm
+      #   run: pnpm publish --no-git-checks
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

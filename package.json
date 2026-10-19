@@ -8,6 +8,7 @@
   "engines": {
     "node": ">=20"
   },
+  "packageManager": "pnpm@11.24.0",
   "bin": {
     "ruling": "./dist/adapters/cli.js"
   },

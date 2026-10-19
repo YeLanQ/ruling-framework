@@ -37,6 +37,7 @@
     "lint:semantic": "eslint . --config eslint.config.semantic.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:eol": "node scripts/check-eol.mjs",
+    "changelog": "node scripts/update-changelog.mjs",
     "audit": "pnpm audit --audit-level high",
     "verify": "pnpm typecheck && pnpm test && pnpm demo && pnpm demo:industrial",
     "gate": "pnpm check:eol && pnpm check:syntax && pnpm typecheck && pnpm lint:semantic && pnpm lint && pnpm audit && pnpm test && pnpm build && pnpm demo && pnpm demo:industrial"

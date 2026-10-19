@@ -203,6 +203,12 @@ ruling-framework/
 
 ---
 
+## 参与贡献
+
+欢迎提交 Issue 与 Pull Request。开发环境、门禁约定与提交流程见 [`CONTRIBUTING.md`](CONTRIBUTING.md)；变更记录见 [`CHANGELOG.md`](CHANGELOG.md)。
+
+---
+
 ## License
 
 Apache License 2.0. See [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE).

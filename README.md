@@ -163,12 +163,12 @@ ruling-framework/
 
 ## CI/CD
 
-仓库通过 Gitea Actions（`.gitea/workflows/ci.yml`）自动化验证与发布：
+仓库通过 GitHub Actions（`.github/workflows/ci.yml`）自动化验证与发布（Gitea Actions 兼容该目录，本地自建实例可复用同一份工作流）：
 
 - **触发**：任意分支 push / pull request 跑 `gate` 任务；tag `v*` push 额外触发 `release` 任务。
 - **gate 任务**（`ubuntu-latest`，Node 22 + pnpm 11.24）：六类门禁分步执行（行尾/语法/类型/语义/质量/漏洞）→ 153 个测试 → 构建 → 两个端到端 demo。
-- **release 任务**：在 gate 全绿后构建并上传 `dist/` 产物（30 天保留）；发布 npm 需配置 `NPM_TOKEN` 后启用注释中的 `pnpm publish` 步骤。
-- **启用前提**：实例需开启 Actions 并注册 runner；`pnpm/action-setup` 读取 `packageManager` 字段锁定 pnpm 版本。
+- **release 任务**：在 gate 全绿后构建，用 `gh` 创建 GitHub Release 并上传 `dist/` 产物（自动生成 release notes）；发布 npm 需配置 `NPM_TOKEN` secret 后启用注释中的 `pnpm publish` 步骤。
+- **推送**：`git push github main`（GitHub）或 `git push origin main`（本地 Gitea）。
 
 ## 验证状态（2026-10-20）
 

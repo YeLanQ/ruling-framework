@@ -70,8 +70,8 @@ chore:   杂项（依赖、配置）
 ## 发布流程（maintainer）
 
 1. 更新 `package.json` 的 `version`，并在 `CHANGELOG.md` 增加对应版本节。
-2. 打 tag 并推送：`git tag v<版本>` 与 `git push origin v<版本>`。
-3. CI 的 `release` 任务在 gate 全绿后构建并上传 `dist/` 产物；npm 发布需在仓库配置 `NPM_TOKEN` 后启用工作流中注释的 `pnpm publish` 步骤。
+2. 打 tag 并推送：`git tag v<版本>` 与 `git push github v<版本>`（GitHub 自动创建 Release 并上传 `dist/` 产物）。
+3. 发布流程由 CI 的 `release` 任务接管：gate 全绿后构建产物并创建 GitHub Release；npm 发布需在 GitHub 仓库配置 `NPM_TOKEN` secret 后启用工作流中注释的 `pnpm publish` 步骤。
 
 ## 问题与讨论
 

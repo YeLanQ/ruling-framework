@@ -84,7 +84,8 @@ export class RulingEngine {
     this.surface = surface;
     this.workspace =
       options.workspace instanceof Workspace ? options.workspace : new Workspace(options.workspace);
-    this.audit = options.audit ?? new AuditLog();
+    this.now = options.now ?? Date.now;
+    this.audit = options.audit ?? new AuditLog({ now: this.now });
     this.approvals = options.approvals ?? new ApprovalStore(surface.approval);
     this.ledger = options.ledger ?? new OutcomeLedger();
     const defaultDir = join(this.workspace.root, ".ruling", "knowledge");
@@ -100,7 +101,6 @@ export class RulingEngine {
       errorsFile:
         options.knowledgePaths?.errorsFile ?? join(knowledgeDir, "errors.jsonl")
     };
-    this.now = options.now ?? Date.now;
     this.surface.knowledge.addMany(loadSeedFile(this.knowledgePaths.seedFile));
     this.surface.knowledge.setSynonyms(loadSynonymsFile(this.knowledgePaths.synonymsFile));
   }

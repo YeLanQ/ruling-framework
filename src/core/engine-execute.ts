@@ -73,7 +73,7 @@ export async function executeRequest(
     ok
       ? "执行完成"
       : output && typeof output === "object" && "error" in output
-        ? String((output as { error: unknown }).error)
+        ? String(output.error)
         : "执行失败";
   engine.surface.knowledge.recordObservation(task, action, ok, now(), {
     reason: failureReason,

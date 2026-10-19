@@ -52,12 +52,18 @@ export function saveState(filePath: string, state: PersistedStateV2): void {
 export function loadState(filePath: string): PersistedState | undefined {
   if (!existsSync(filePath)) return undefined;
   try {
-    const parsed = JSON.parse(gunzipSync(readFileSync(filePath)).toString("utf8")) as PersistedState;
-    if (parsed.version !== 1 && parsed.version !== 2) return undefined;
-    return parsed;
+    const raw = JSON.parse(gunzipSync(readFileSync(filePath)).toString("utf8")) as unknown;
+    if (!isPersistedState(raw)) return undefined;
+    return raw;
   } catch {
     return undefined;
   }
+}
+
+function isPersistedState(raw: unknown): raw is PersistedState {
+  if (typeof raw !== "object" || raw === null) return false;
+  const record = raw as Record<string, unknown>;
+  return record.version === 1 || record.version === 2;
 }
 
 function stringArray(value: unknown): string[] {
@@ -66,7 +72,8 @@ function stringArray(value: unknown): string[] {
     : [];
 }
 
-function hydrateUnit(raw: unknown): KnowledgeUnit | undefined {
+/** Normalizes a raw knowledge record with semantic defaults; rejects malformed units. */
+export function hydrateUnit(raw: unknown): KnowledgeUnit | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const record = raw as Partial<KnowledgeUnit>;
   if (typeof record.id !== "string" || typeof record.title !== "string" || typeof record.body !== "string") {

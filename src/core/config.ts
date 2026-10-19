@@ -77,6 +77,13 @@ export function loadConfig(cwd: string): RulingConfig {
   if (!parsed.pack || typeof parsed.pack !== "string") {
     throw new Error(`配置缺少 pack：${path}`);
   }
+  const rawTrust: unknown = parsed.trust;
+  if (rawTrust !== undefined && rawTrust !== "agent" && rawTrust !== "operator") {
+    throw new Error(`配置 trust 非法：${JSON.stringify(rawTrust)}（应为 agent 或 operator）`);
+  }
+  if (parsed.role !== undefined && (typeof parsed.role !== "string" || !parsed.role.trim())) {
+    throw new Error("配置 role 必须是非空字符串");
+  }
   return {
     ...defaults,
     ...parsed,

@@ -3,6 +3,7 @@
 // action it registers.
 
 import { RulingEngine, type EngineOptions } from "../core/engine.js";
+import type { JsonSchema } from "../core/types.js";
 import { Workspace } from "../core/workspace.js";
 import { createIndustrialPack } from "./industrial.js";
 import { createOpcPack } from "./opc.js";
@@ -55,6 +56,28 @@ export function listPacks(): PackSummary[] {
   });
 }
 
+const SCHEMA_TYPES = new Set(["object", "string", "number", "boolean", "array"]);
+
+function validateActionSchema(
+  schema: JsonSchema | undefined,
+  path: string,
+  errors: string[]
+): void {
+  if (!schema) return;
+  if (schema.type !== undefined && !SCHEMA_TYPES.has(schema.type)) {
+    errors.push(`${path}.type 非法：${schema.type}`);
+  }
+  for (const key of schema.required ?? []) {
+    if (schema.properties && !(key in schema.properties)) {
+      errors.push(`${path}.required 引用了不存在的属性 ${key}`);
+    }
+  }
+  for (const [key, child] of Object.entries(schema.properties ?? {})) {
+    validateActionSchema(child, `${path}.properties.${key}`, errors);
+  }
+  if (schema.items) validateActionSchema(schema.items, `${path}.items`, errors);
+}
+
 export function validatePack(pack: PackDefinition): string[] {
   const errors: string[] = [];
   const manifest = pack.manifest;
@@ -99,6 +122,7 @@ export function validatePack(pack: PackDefinition): string[] {
       errors.push(`动作 ${action.id} 缺少有效能耗权重`);
     }
     if (typeof action.keywords !== "object") errors.push(`动作 ${action.id} 缺少 keywords`);
+    validateActionSchema(action.inputSchema, `动作 ${action.id} 的 inputSchema`, errors);
     if (surface.executor.handles && !surface.executor.handles(action.id)) {
       errors.push(`动作 ${action.id} 没有执行器实现`);
     }
@@ -106,6 +130,16 @@ export function validatePack(pack: PackDefinition): string[] {
 
   for (const lock of manifest.formatLocks) {
     if (lock.extensions.length === 0) errors.push(`格式锁 ${lock.channel} 没有扩展名`);
+  }
+
+  const knowledgeKinds = new Set(["seed", "extended", "error"]);
+  for (const unit of manifest.knowledge) {
+    if (typeof unit.id !== "string" || typeof unit.title !== "string" || typeof unit.body !== "string") {
+      errors.push(`知识单元 ${unit.id} 缺少 id/title/body`);
+    }
+    if (!knowledgeKinds.has(unit.kind)) {
+      errors.push(`知识单元 ${unit.id} 的 kind 非法：${unit.kind}`);
+    }
   }
 
   return errors;

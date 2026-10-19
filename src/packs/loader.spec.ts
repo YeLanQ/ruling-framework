@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it } from "vitest";
 
+import type { JsonSchema } from "../core/types.js";
 import { tempDir } from "../test-support/temp.js";
 import { createEngineForPack, getPack, packIds, validatePack } from "./loader.js";
+import type { PackManifest } from "./types.js";
 
 const cleanups: Array<() => void> = [];
 afterEach(() => {
@@ -124,5 +126,45 @@ describe("packs", () => {
     });
     expect(outcome.status).toBe("denied");
     expect(outcome.errorCode).toBe("RED_LINE");
+  });
+
+  it("rejects an unsupported schema type during pack validation", () => {
+    const base = getPack("opc");
+    const template = base.manifest.actions[0];
+    if (!template) throw new Error("opc pack 缺少动作");
+    const bad = {
+      ...base.manifest,
+      actions: [
+        {
+          ...template,
+          id: "bad.schema",
+          inputSchema: { type: "integer" } as unknown as JsonSchema
+        }
+      ]
+    } as unknown as PackManifest;
+    const errors = validatePack({ ...base, manifest: bad });
+    expect(errors.join("\n")).toContain("type 非法：integer");
+  });
+
+  it("rejects required fields that do not exist in the schema", () => {
+    const base = getPack("opc");
+    const template = base.manifest.actions[0];
+    if (!template) throw new Error("opc pack 缺少动作");
+    const bad = {
+      ...base.manifest,
+      actions: [
+        {
+          ...template,
+          id: "bad.required",
+          inputSchema: {
+            type: "object",
+            properties: { ok: { type: "string" } },
+            required: ["missing"]
+          }
+        }
+      ]
+    } as unknown as PackManifest;
+    const errors = validatePack({ ...base, manifest: bad });
+    expect(errors.join("\n")).toContain("引用了不存在的属性 missing");
   });
 });

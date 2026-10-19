@@ -8,6 +8,16 @@ import type {
 } from "../core/knowledge/store.js";
 import { optionalString, stringParam, type ActionHandler } from "./executor.js";
 
+/** Observation-owned id prefixes; the framework relies on them for causal chains. */
+const RESERVED_PREFIXES = ["task:", "action:", "failure:", "outcome:"];
+
+function assertNotReserved(id: string): void {
+  const prefix = RESERVED_PREFIXES.find((candidate) => id.startsWith(candidate));
+  if (prefix) {
+    throw new Error(`id 使用保留前缀 ${prefix}：不能通过知识动作创建或覆盖观测单元`);
+  }
+}
+
 function stringArrayParam(ctx: { params: Record<string, unknown> }, name: string): string[] {
   const value = ctx.params[name];
   return Array.isArray(value)
@@ -51,15 +61,18 @@ function inputFrom(ctx: { params: Record<string, unknown> }, kind: "extended" | 
 export function knowledgeHandlers(knowledge: KnowledgeStore): Record<string, ActionHandler> {
   return {
     "knowledge.add": async (ctx) => {
+      assertNotReserved(stringParam(ctx, "id"));
       const unit = knowledge.add(inputFrom(ctx, "extended"));
       return { result: { added: unit.id, version: unit.version, namespace: unit.namespace } };
     },
     "lesson.add": async (ctx) => {
+      assertNotReserved(stringParam(ctx, "id"));
       const unit = knowledge.add(inputFrom(ctx, "error"));
       return { result: { added: unit.id, version: unit.version, namespace: unit.namespace } };
     },
     "knowledge.review": async (ctx) => {
       const id = stringParam(ctx, "id");
+      assertNotReserved(id);
       const confidence = optionalNumber(ctx, "confidence");
       const unit = knowledge.update(id, {
         status: "active",
@@ -72,6 +85,7 @@ export function knowledgeHandlers(knowledge: KnowledgeStore): Record<string, Act
     },
     "knowledge.deprecate": async (ctx) => {
       const id = stringParam(ctx, "id");
+      assertNotReserved(id);
       const existing = knowledge.get(id);
       if (!existing) throw new Error(`知识单元不存在：${id}`);
       const supersededBy = optionalString(ctx, "supersededBy");
@@ -87,9 +101,11 @@ export function knowledgeHandlers(knowledge: KnowledgeStore): Record<string, Act
     },
     "knowledge.merge": async (ctx) => {
       const canonicalId = stringParam(ctx, "canonicalId");
+      assertNotReserved(canonicalId);
       const duplicateIds = [...new Set(stringArrayParam(ctx, "duplicateIds"))].filter(
         (id) => id !== canonicalId
       );
+      for (const id of duplicateIds) assertNotReserved(id);
       const canonical = knowledge.get(canonicalId);
       if (!canonical) throw new Error(`规范单元不存在：${canonicalId}`);
       const duplicates = duplicateIds.map((id) => {

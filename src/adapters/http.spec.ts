@@ -10,7 +10,13 @@ const servers: Server[] = [];
 afterEach(async () => {
   while (servers.length > 0) {
     const server = servers.pop();
-    if (server) await new Promise<void>((resolve) => server.close(() => resolve()));
+    if (server) {
+      await new Promise<void>((resolve) => {
+        server.close(() => {
+          resolve();
+        });
+      });
+    }
   }
   while (cleanups.length > 0) cleanups.pop()?.();
 });

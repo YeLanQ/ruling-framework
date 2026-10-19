@@ -45,7 +45,9 @@ function validateInto(schema: JsonSchema, value: unknown, path: string, errors: 
         return;
       }
       if (schema.items) {
-        value.forEach((item, index) => validateInto(schema.items as JsonSchema, item, `${path}[${index}]`, errors));
+        value.forEach((item, index) => {
+          validateInto(schema.items as JsonSchema, item, `${path}[${index}]`, errors);
+        });
       }
       break;
     }
@@ -79,7 +81,14 @@ function validateInto(schema: JsonSchema, value: unknown, path: string, errors: 
       if (typeof value !== "boolean") errors.push(`${path} 必须是布尔值`);
       break;
     }
-    default:
+    default: {
+      // 显式提供的非法类型 fail-closed；缺失 type 表示“任意标量”，不约束。
+      // JSON manifest 经运行时断言后可携带联合之外的字符串，故经 unknown 判断。
+      const rawType: unknown = schema.type;
+      if (rawType !== undefined) {
+        errors.push(`${path} 的类型不受支持：${JSON.stringify(rawType)}`);
+      }
       break;
+    }
   }
 }

@@ -32,12 +32,20 @@
     "demo": "tsx src/demo/opc-demo.ts",
     "demo:industrial": "tsx src/demo/industrial-demo.ts",
     "ruling": "tsx src/adapters/cli.ts",
-    "verify": "pnpm typecheck && pnpm test && pnpm demo && pnpm demo:industrial"
+    "lint": "eslint .",
+    "lint:semantic": "eslint . --config eslint.config.semantic.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
+    "check:eol": "node scripts/check-eol.mjs",
+    "audit": "pnpm audit --audit-level high",
+    "verify": "pnpm typecheck && pnpm test && pnpm demo && pnpm demo:industrial",
+    "gate": "pnpm check:eol && pnpm check:syntax && pnpm typecheck && pnpm lint:semantic && pnpm lint && pnpm audit && pnpm test && pnpm build && pnpm demo && pnpm demo:industrial"
   },
   "devDependencies": {
     "@types/node": "^22.13.1",
+    "eslint": "^10.13.0",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "typescript-eslint": "^8.71.2",
+    "vitest": "^4.1.11"
   }
 }

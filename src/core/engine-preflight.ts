@@ -38,12 +38,14 @@ export async function preflight(
   if (typeof request.task !== "string" || typeof request.action !== "string") {
     throw new Error("task 与 action 必须是字符串");
   }
-  if (request.trust !== "agent" && request.trust !== "operator") {
+  const rawTrust: unknown = request.trust;
+  if (rawTrust !== "agent" && rawTrust !== "operator") {
     throw new Error("trust 必须是 agent 或 operator");
   }
+  const rawParams: unknown = request.params;
   if (
-    request.params !== undefined &&
-    (typeof request.params !== "object" || request.params === null || Array.isArray(request.params))
+    rawParams !== undefined &&
+    (typeof rawParams !== "object" || rawParams === null || Array.isArray(rawParams))
   ) {
     throw new Error("params 必须是对象");
   }

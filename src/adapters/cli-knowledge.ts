@@ -39,7 +39,7 @@ export function runKnowledgeCommand(
     else {
       for (const unit of units) {
         io.stdout(
-          `${unit.kind.padEnd(8)} ${unit.status.padEnd(10)} ${(unit.namespace ?? "-").padEnd(12)} ${unit.id}\t${unit.title}\n`
+          `${unit.kind.padEnd(8)} ${unit.status.padEnd(10)} ${unit.namespace.padEnd(12)} ${unit.id}\t${unit.title}\n`
         );
       }
       io.stdout(`total: ${units.length}\n`);

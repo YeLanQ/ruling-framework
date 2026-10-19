@@ -194,7 +194,7 @@ export async function runAgent(options: AgentOptions): Promise<AgentResult> {
       return finish(`模型调用失败：${message}`, "error");
     }
 
-    let content = response.content ?? "";
+    let content = response.content;
     let calls: ChatToolCall[] = response.toolCalls;
     if (calls.length === 0 && content.trim()) {
       const parsed = parseInlineToolCalls(content, resolveName);

@@ -10,7 +10,11 @@ let temp: ReturnType<typeof tempDir> | undefined;
 let server: Server | undefined;
 afterEach(async () => {
   if (server) {
-    await new Promise<void>((resolve) => server?.close(() => resolve()));
+    await new Promise<void>((resolve) => {
+      server?.close(() => {
+        resolve();
+      });
+    });
     server = undefined;
   }
   temp?.cleanup();
@@ -75,7 +79,11 @@ describe("external knowledge sources", () => {
       response.writeHead(200, { "content-type": "application/json" });
       response.end(JSON.stringify({ units: [{ id: "remote", title: "Remote", body: "remote body" }] }));
     });
-    await new Promise<void>((resolve) => server?.listen(0, "127.0.0.1", () => resolve()));
+    await new Promise<void>((resolve) => {
+      server?.listen(0, "127.0.0.1", () => {
+        resolve();
+      });
+    });
     const address = server.address();
     const port = typeof address === "object" && address ? address.port : 0;
 

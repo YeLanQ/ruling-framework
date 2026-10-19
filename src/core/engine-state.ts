@@ -2,12 +2,15 @@
 // state. Approvals are deliberately absent.
 
 import type { RulingEngine } from "./engine.js";
+import type { GraphSnapshot } from "./knowledge/graph.js";
 import {
+  hydrateUnit,
   loadState,
   readKnowledgeLibrary,
   saveState,
   writeKnowledgeLibrary
 } from "./knowledge/snapshot.js";
+import type { KnowledgeUnit } from "./knowledge/store-types.js";
 
 export interface EngineStats {
   decisions: { autoExecute: number; needConfirm: number; deny: number };
@@ -51,15 +54,19 @@ export function restoreEngine(engine: RulingEngine, filePath: string): boolean {
   if (!state) return local.length > 0;
 
   if (state.version === 1) {
-    const legacy = (state.knowledge?.units ?? []).filter(
-      (unit) => unit.kind !== "seed" && !(unit.origin ?? "").startsWith("external:")
-    );
+    const knowledge = state.knowledge as
+      | { units?: KnowledgeUnit[]; graph?: GraphSnapshot }
+      | undefined;
+    const legacy = (knowledge?.units ?? [])
+      .map((unit) => hydrateUnit(unit))
+      .filter((unit): unit is KnowledgeUnit => unit !== undefined)
+      .filter((unit) => unit.kind !== "seed" && !(unit.origin ?? "").startsWith("external:"));
     if (legacy.length > 0) {
       const merged = new Map(local.map((unit) => [unit.id, unit]));
       for (const unit of legacy) merged.set(unit.id, unit);
       engine.surface.knowledge.restorePersistent([...merged.values()]);
     }
-    engine.surface.knowledge.restoreGraph(state.knowledge?.graph ?? { edges: [] });
+    engine.surface.knowledge.restoreGraph(knowledge?.graph ?? { edges: [] });
   } else {
     engine.surface.knowledge.restoreGraph(state.graph);
   }

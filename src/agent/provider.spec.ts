@@ -6,7 +6,11 @@ import { OpenAICompatibleProvider } from "./provider.js";
 let server: Server | undefined;
 afterEach(async () => {
   if (server) {
-    await new Promise<void>((resolve) => server?.close(() => resolve()));
+    await new Promise<void>((resolve) => {
+      server?.close(() => {
+        resolve();
+      });
+    });
     server = undefined;
   }
 });
@@ -15,16 +19,25 @@ async function start(
   handler: (body: Record<string, unknown>, count: number) => { status: number; body: unknown }
 ): Promise<string> {
   let count = 0;
-  server = createServer(async (request, response) => {
-    const chunks: Buffer[] = [];
-    for await (const chunk of request) chunks.push(Buffer.from(chunk));
-    const body = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
-    count += 1;
-    const result = handler(body, count);
-    response.writeHead(result.status, { "content-type": "application/json" });
-    response.end(JSON.stringify(result.body));
+  server = createServer((request, response) => {
+    void (async () => {
+      const chunks: Buffer[] = [];
+      for await (const chunk of request) {
+        const raw: unknown = chunk;
+        chunks.push(Buffer.isBuffer(raw) ? raw : Buffer.from(new TextEncoder().encode(String(raw))));
+      }
+      const body = JSON.parse(Buffer.concat(chunks).toString("utf8")) as Record<string, unknown>;
+      count += 1;
+      const result = handler(body, count);
+      response.writeHead(result.status, { "content-type": "application/json" });
+      response.end(JSON.stringify(result.body));
+    })();
   });
-  await new Promise<void>((resolve) => server?.listen(0, "127.0.0.1", () => resolve()));
+  await new Promise<void>((resolve) => {
+    server?.listen(0, "127.0.0.1", () => {
+      resolve();
+    });
+  });
   const address = server.address();
   const port = typeof address === "object" && address ? address.port : 0;
   return `http://127.0.0.1:${port}/v1`;

@@ -19,7 +19,7 @@ async function withApproval(
   request: ExecuteRequest,
   roles: string[] = ["owner"]
 ): Promise<ExecuteOutcome> {
-  let outcome = await engine.execute(request);
+  const outcome = await engine.execute(request);
   if (outcome.status !== "needConfirm") return outcome;
   for (const role of roles) engine.approve(request.task, role);
   return engine.execute(request);

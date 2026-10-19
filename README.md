@@ -12,7 +12,8 @@
 
 ```bash
 pnpm install
-pnpm verify          # typecheck + 136 tests + 两个端到端 demo
+pnpm verify          # typecheck + 153 tests + 两个端到端 demo
+pnpm gate            # 六类门禁：行尾/语法/类型/语义/质量/漏洞 + 测试 + 构建 + demo
 pnpm demo            # OPC：绿/黄/红、审批、未知动作、Agent 循环、审计
 pnpm demo:industrial # 工业设计：动态红灯、格式锁、版本溯源
 ```
@@ -160,13 +161,18 @@ ruling-framework/
 
 ---
 
-## 验证状态（2026-10-19）
+## 验证状态（2026-10-20）
 
-- `pnpm typecheck`：通过（strict）。
-- `pnpm test`：22 个测试文件，136 个用例全部通过。
+- `pnpm typecheck`：通过（strict + noUncheckedIndexedAccess）。
+- `pnpm test`：24 个测试文件，153 个用例全部通过。
 - `pnpm demo`：OPC 端到端通过。
 - `pnpm demo:industrial`：工业设计端到端通过。
 - `pnpm build`：通过。
+- `pnpm check:syntax`：92 个 TS 文件语法解析通过。
+- `pnpm check:eol`：全部文本文件统一 LF 行尾（`.editorconfig` + `.gitattributes` 配套）。
+- `pnpm lint`：质量门禁通过（ESLint recommended + 自定义）。
+- `pnpm lint:semantic`：语义门禁通过（typescript-eslint type-aware 严格规则）。
+- `pnpm audit`：依赖漏洞审计通过（当前 0 漏洞，需网络）。
 - 编译产物 CLI 的 `init / catalog / knowledge list / exec / audit verify / audit export` 实测通过。
 - MCP stdio 的 `initialize / tools/list / tools/call` 实测通过。
 - HTTP 的 `GET /health`、`POST /execute` 实测通过。

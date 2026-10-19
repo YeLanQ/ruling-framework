@@ -36,6 +36,7 @@ export interface AuditEntry extends AuditInput {
 export interface AuditOptions {
   filePath?: string;
   ringSize?: number;
+  now?: () => number;
 }
 
 function sha256(value: string): string {
@@ -70,12 +71,14 @@ export class AuditLog {
   private readonly ring: AuditEntry[] = [];
   private readonly filePath?: string;
   private readonly ringSize: number;
+  private readonly now: () => number;
   private lastHash = "genesis";
   private seq = 0;
 
   constructor(options: AuditOptions = {}) {
     this.filePath = options.filePath;
     this.ringSize = options.ringSize ?? 50;
+    this.now = options.now ?? Date.now;
     this.loadTail();
   }
 
@@ -105,7 +108,7 @@ export class AuditLog {
       taskHash: sha256(task).slice(0, 16),
       taskPreview: task.slice(0, 80),
       seq: ++this.seq,
-      ts: Date.now(),
+      ts: this.now(),
       prevHash: this.lastHash
     };
     const entry: AuditEntry = { ...base, hash: entryHash(base) };

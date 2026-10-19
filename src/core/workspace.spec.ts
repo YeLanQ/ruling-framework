@@ -1,4 +1,4 @@
-import { mkdirSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { tempDir } from "../test-support/temp.js";
@@ -12,7 +12,9 @@ beforeEach(() => {
   workspace = new Workspace({ root: temp.path });
 });
 
-afterEach(() => temp.cleanup());
+afterEach(() => {
+  temp.cleanup();
+});
 
 describe("Workspace data boundary", () => {
   it("writes and reads relative paths atomically", async () => {
@@ -60,5 +62,24 @@ describe("Workspace data boundary", () => {
     await workspace.remove("tmp/a.txt");
     expect(await workspace.exists("tmp/a.txt")).toBe(false);
     await expect(workspace.remove(".")).rejects.toMatchObject({ code: "PATH_INVALID" });
+  });
+
+  it("keeps internal/ read-only on remove as well", async () => {
+    mkdirSync(`${temp.path}/internal`, { recursive: true });
+    writeFileSync(`${temp.path}/internal/engine.bin`, "x");
+    await expect(workspace.remove("internal/engine.bin")).rejects.toMatchObject({
+      code: "INTERNAL_READONLY"
+    });
+  });
+
+  it("locks managed formats on remove as well", async () => {
+    const locked = new Workspace({
+      root: temp.path,
+      formatLocks: [
+        { extensions: [".pdf"], channel: "report.export", reason: "由导出通道管理" }
+      ]
+    });
+    writeFileSync(`${temp.path}/report.pdf`, "x");
+    await expect(locked.remove("report.pdf")).rejects.toMatchObject({ code: "FORMAT_LOCKED" });
   });
 });

@@ -141,5 +141,7 @@ export function defaultConfirm(message: string): Promise<boolean> {
   return rl
     .question(`${message} [y/N] `)
     .then((answer) => /^y(es)?$/i.test(answer.trim()))
-    .finally(() => rl.close());
+    .finally(() => {
+      rl.close();
+    });
 }

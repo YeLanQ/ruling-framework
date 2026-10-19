@@ -6,6 +6,8 @@ export function tempDir(prefix = "ruling-test-"): { path: string; cleanup: () =>
   const path = mkdtempSync(join(tmpdir(), prefix));
   return {
     path,
-    cleanup: () => rmSync(path, { recursive: true, force: true })
+    cleanup: () => {
+      rmSync(path, { recursive: true, force: true });
+    }
   };
 }

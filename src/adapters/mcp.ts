@@ -46,7 +46,9 @@ export class McpServer {
     });
     return new Promise<void>((resolve) => {
       lines.on("close", () => {
-        void pending.then(() => resolve());
+        void pending.then(() => {
+          resolve();
+        });
       });
     });
   }
@@ -131,8 +133,19 @@ export class McpServer {
       params?.arguments && typeof params.arguments === "object"
         ? { ...(params.arguments as Record<string, unknown>) }
         : {};
-    const task = typeof args.__task === "string" ? String(args.__task) : `MCP ${spec.id}`;
+    const task = typeof args.__task === "string" ? args.__task.trim() : "";
     delete args.__task;
+    if (!task) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: "缺少 __task：MCP 调用必须携带 __task 作为审批键，不能省略。"
+          }
+        ],
+        isError: true
+      };
+    }
 
     const outcome = await this.engine.execute({
       task,

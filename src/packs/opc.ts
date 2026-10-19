@@ -11,8 +11,9 @@ import { readHandlers, writeHandlers } from "./common-handlers.js";
 import { blockedByRedLine, createExecutor, type ActionHandler } from "./executor.js";
 import { knowledgeHandlers } from "./knowledge-handlers.js";
 import type { PackDefinition, PackManifest } from "./types.js";
+import { coerceManifest } from "./types.js";
 
-const manifest = manifestJson as unknown as PackManifest;
+const manifest = coerceManifest(manifestJson) satisfies PackManifest;
 
 function handlers(knowledge: KnowledgeStore): Record<string, ActionHandler> {
   return {

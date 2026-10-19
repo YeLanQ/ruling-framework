@@ -140,6 +140,7 @@ export class Workspace implements WorkspaceApi {
   }
 
   async remove(rel: string): Promise<void> {
+    this.assertWritable(rel);
     const abs = this.resolveSafe(rel);
     if (abs === this.root) throw new WorkspaceError("PATH_INVALID", "不能删除工作区根目录");
     await rm(abs, { recursive: true, force: true });

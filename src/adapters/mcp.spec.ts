@@ -78,4 +78,15 @@ describe("MCP adapter", () => {
     expect(names).toContain("workspace_list");
     expect(names).not.toContain("doc_write");
   });
+
+  it("rejects a tool call without __task instead of sharing a coarse approval key", async () => {
+    const { server } = setup("opc", "agent");
+    const result = await call(server, "tools/call", {
+      name: "doc_write",
+      arguments: { path: "a.md", content: "x" }
+    });
+    const content = (result.result?.content ?? []) as Array<{ text: string }>;
+    expect(result.result?.isError).toBe(true);
+    expect(content[0]?.text).toContain("__task");
+  });
 });

@@ -48,7 +48,7 @@ describe("CLI adapter", () => {
     await run(["init", "--pack", "opc"]);
     const green = await run(["exec", "workspace.list", "--task", "查看", "--json"]);
     expect(green.code).toBe(0);
-    expect(JSON.parse(green.stdout).status).toBe("ok");
+    expect((JSON.parse(green.stdout) as { status: string }).status).toBe("ok");
 
     const yellow = await run([
       "exec",
@@ -60,7 +60,7 @@ describe("CLI adapter", () => {
       "--json"
     ]);
     expect(yellow.code).toBe(2);
-    expect(JSON.parse(yellow.stdout).status).toBe("needConfirm");
+    expect((JSON.parse(yellow.stdout) as { status: string }).status).toBe("needConfirm");
   });
 
   it("executes a yellow action with an explicit --yes approval", async () => {
@@ -76,7 +76,7 @@ describe("CLI adapter", () => {
       "--json"
     ]);
     expect(result.code).toBe(0);
-    expect(JSON.parse(result.stdout).status).toBe("ok");
+    expect((JSON.parse(result.stdout) as { status: string }).status).toBe("ok");
     expect(existsSync(join(temp?.path ?? "", "a.md"))).toBe(true);
   });
 
@@ -222,7 +222,8 @@ describe("CLI adapter", () => {
     );
 
     const stats = await run(["knowledge", "stats", "--json"]);
-    expect(JSON.parse(stats.stdout)).toMatchObject({ total: expect.any(Number) });
+    const statsJson = JSON.parse(stats.stdout) as { total: unknown };
+    expect(typeof statsJson.total).toBe("number");
     expect(JSON.parse((await run(["knowledge", "dedupe", "--json"])).stdout)).toEqual(expect.any(Array));
     expect(JSON.parse((await run(["knowledge", "conflicts", "--json"])).stdout)).toEqual(
       expect.any(Array)

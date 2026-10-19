@@ -27,7 +27,9 @@ describe("SessionStore", () => {
     temp = tempDir("ruling-session-");
     const store = new SessionStore(temp.path);
     expect(() => store.load("../escape")).toThrow();
-    expect(() => store.save("a/b", [])).toThrow();
+    expect(() => {
+      store.save("a/b", []);
+    }).toThrow();
   });
 
   it("loads an empty history from a corrupt document", () => {

@@ -312,4 +312,35 @@ describe("separated knowledge libraries", () => {
     });
     expect(restored.surface.knowledge.get("exp:duplicate")?.supersededBy).toBe("exp:canonical");
   });
+
+  it("rejects knowledge ids that would shadow observation units", async () => {
+    const { engine } = setup();
+    engine.approve("登记保留前缀", "owner");
+    const outcome = await engine.execute({
+      task: "登记保留前缀",
+      action: "knowledge.add",
+      params: { id: "task:abcd1234", title: "越权", body: "x" },
+      trust: "agent",
+      source: "test"
+    });
+    expect(outcome.status).toBe("error");
+    expect(outcome.errorCode).toBe("EXECUTOR_ERROR");
+    expect(String((outcome.result as { error?: unknown }).error)).toContain("保留前缀");
+    expect(engine.surface.knowledge.get("task:abcd1234")).toBeUndefined();
+  });
+
+  it("rejects reserved prefixes in merge targets too", async () => {
+    const { engine } = setup();
+    engine.approve("合并保留前缀", "owner");
+    const outcome = await engine.execute({
+      task: "合并保留前缀",
+      action: "knowledge.merge",
+      params: { canonicalId: "outcome:ok", duplicateIds: [] },
+      trust: "agent",
+      source: "test"
+    });
+    expect(outcome.status).toBe("error");
+    expect(outcome.errorCode).toBe("EXECUTOR_ERROR");
+    expect(String((outcome.result as { error?: unknown }).error)).toContain("保留前缀");
+  });
 });

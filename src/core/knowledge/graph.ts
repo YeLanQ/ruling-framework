@@ -86,7 +86,8 @@ export class KnowledgeGraph {
 
   restore(snapshot: GraphSnapshot): void {
     this.edges.clear();
-    for (const edge of snapshot.edges ?? []) {
+    const edges = (snapshot as Partial<GraphSnapshot>).edges ?? [];
+    for (const edge of edges) {
       this.edges.set(edgeKey(edge.from, edge.kind, edge.to), { ...edge });
     }
   }

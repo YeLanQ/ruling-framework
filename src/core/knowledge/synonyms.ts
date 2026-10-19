@@ -18,7 +18,8 @@ export function parseSynonymsPayload(payload: unknown): string[][] {
   if (payload && typeof payload === "object") {
     const groups: string[][] = [];
     for (const [canonical, aliases] of Object.entries(payload as Record<string, unknown>)) {
-      const group = [canonical, ...(Array.isArray(aliases) ? aliases : [])].filter(
+      const list: unknown[] = Array.isArray(aliases) ? aliases : [];
+      const group = [canonical, ...list].filter(
         (item): item is string => typeof item === "string"
       );
       if (group.length > 0) groups.push(group);

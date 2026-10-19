@@ -2,6 +2,8 @@
 // failure lesson records the reason and error code, so it is useful beyond a
 // bare "something failed" marker.
 
+import { createHash } from "node:crypto";
+
 import {
   FAILURE_GAIN_FACTOR,
   GAIN_ACTION_OUTCOME,
@@ -10,12 +12,7 @@ import {
 import type { KnowledgeStore, ObservationDetail } from "./store.js";
 
 function taskId(task: string): string {
-  let hash = 0x811c9dc5;
-  for (let index = 0; index < task.length; index += 1) {
-    hash ^= task.charCodeAt(index);
-    hash = Math.imul(hash, 0x01000193);
-  }
-  return `task:${(hash >>> 0).toString(16)}`;
+  return `task:${createHash("sha256").update(task).digest("hex").slice(0, 16)}`;
 }
 
 export function recordObservation(

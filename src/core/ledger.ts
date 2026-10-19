@@ -63,13 +63,14 @@ export class OutcomeLedger {
 
   restore(snapshot: LedgerSnapshot): void {
     this.stats.clear();
-    for (const [action, stat] of Object.entries(snapshot.stats ?? {})) {
+    const source = snapshot as Partial<LedgerSnapshot>;
+    for (const [action, stat] of Object.entries(source.stats ?? {})) {
       this.stats.set(action, { ...stat });
     }
     Object.assign(this.decisions, {
-      autoExecute: snapshot.decisions?.autoExecute ?? 0,
-      needConfirm: snapshot.decisions?.needConfirm ?? 0,
-      deny: snapshot.decisions?.deny ?? 0
+      autoExecute: source.decisions?.autoExecute ?? 0,
+      needConfirm: source.decisions?.needConfirm ?? 0,
+      deny: source.decisions?.deny ?? 0
     });
   }
 }

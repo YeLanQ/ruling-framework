@@ -101,14 +101,16 @@ function classifyUnit(text: string, candidates: ActionCandidate[]): TaskUnit {
     };
   }
   if (AMBIGUOUS.test(text) || close) {
+    const other = second?.action.id;
     return {
       text,
       mode: "fuzzy",
       action: top.action.id,
       confidence: confidenceOf(top.score),
-      reason: close
-        ? `候选动作不明确：${top.action.id} 与 ${second?.action.id} 分数接近`
-        : "任务表述模糊，需要补充对象、动作或目标"
+      reason:
+        close && other
+          ? `候选动作不明确：${top.action.id} 与 ${other} 分数接近`
+          : "任务表述模糊，需要补充对象、动作或目标"
     };
   }
   if (top.action.zone === "green" && required.length === 0 && top.score >= 2) {

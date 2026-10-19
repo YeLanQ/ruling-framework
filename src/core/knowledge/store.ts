@@ -235,7 +235,7 @@ export class KnowledgeStore {
   restore(snapshot: KnowledgeSnapshot): void {
     this.units.clear();
     this.vectors.clear();
-    for (const unit of snapshot.units ?? []) this.put({ ...unit });
+    for (const unit of snapshot.units) this.put({ ...unit });
     this.graph.restore(snapshot.graph);
   }
 
@@ -255,9 +255,6 @@ export class KnowledgeStore {
   private put(unit: KnowledgeUnit): void {
     const safe: KnowledgeUnit = {
       ...unit,
-      namespace: unit.namespace ?? "local",
-      aliases: unit.aliases ?? [],
-      status: unit.status ?? "active",
       confidence: typeof unit.confidence === "number" ? unit.confidence : 0.8,
       version: typeof unit.version === "number" ? unit.version : 1
     };
@@ -269,7 +266,7 @@ export class KnowledgeStore {
     this.vectors.set(
       unit.id,
       embed(
-        [unit.title, unit.summary, unit.body, ...(unit.tags ?? []), ...(unit.aliases ?? [])].join(" ")
+        [unit.title, unit.summary, unit.body, ...unit.tags, ...unit.aliases].join(" ")
       )
     );
   }

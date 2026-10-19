@@ -21,8 +21,9 @@ import {
 import { blockedByRedLine, createExecutor, optionalString, stringParam, type ActionHandler } from "./executor.js";
 import { knowledgeHandlers } from "./knowledge-handlers.js";
 import type { PackDefinition, PackManifest } from "./types.js";
+import { coerceManifest } from "./types.js";
 
-const manifest = manifestJson as unknown as PackManifest;
+const manifest = coerceManifest(manifestJson) satisfies PackManifest;
 
 const SAFETY_NAMES = new Set(["wallThickness", "safetyFactor", "materialGrade", "loadRating"]);
 

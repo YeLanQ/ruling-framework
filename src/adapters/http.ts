@@ -25,7 +25,8 @@ async function readBody(request: IncomingMessage): Promise<string> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of request) {
-    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    const raw: unknown = chunk;
+    const buffer = Buffer.isBuffer(raw) ? raw : Buffer.from(new TextEncoder().encode(String(raw)));
     size += buffer.length;
     if (size > MAX_BODY_BYTES) throw new Error("请求体超过 1MB 上限");
     chunks.push(buffer);
@@ -45,9 +46,19 @@ function catalog(engine: RulingEngine): unknown {
 }
 
 export function createHttpServer(engine: RulingEngine, options: HttpOptions = {}): Server {
-  return createServer(async (request, response) => {
-    try {
-      if (options.token) {
+  return createServer((request, response) => {
+    void handleRequest(engine, options, request, response);
+  });
+}
+
+async function handleRequest(
+  engine: RulingEngine,
+  options: HttpOptions,
+  request: IncomingMessage,
+  response: ServerResponse
+): Promise<void> {
+  try {
+    if (options.token) {
         const token = request.headers["x-ruling-token"];
         if (token !== options.token) {
           send(response, 401, { error: "token mismatch" });
@@ -103,7 +114,6 @@ export function createHttpServer(engine: RulingEngine, options: HttpOptions = {}
     } catch (error) {
       send(response, 400, { error: error instanceof Error ? error.message : String(error) });
     }
-  });
 }
 
 export async function startHttpServer(
@@ -114,7 +124,9 @@ export async function startHttpServer(
   const port = options.port ?? 39100;
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
-    server.listen(port, "127.0.0.1", () => resolve());
+    server.listen(port, "127.0.0.1", () => {
+      resolve();
+    });
   });
   const address = server.address();
   const actual = typeof address === "object" && address ? address.port : port;

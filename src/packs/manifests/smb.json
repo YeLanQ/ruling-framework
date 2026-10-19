@@ -1,0 +1,731 @@
+{
+  "id": "smb",
+  "name": "Small Business",
+  "version": "0.1.0",
+  "description": "Small-team reference pack: role-based source grants and dual approval for releases.",
+  "roles": [
+    "owner",
+    "editor",
+    "reviewer",
+    "viewer"
+  ],
+  "defaultRole": "editor",
+  "approval": {
+    "ttlMs": 600000,
+    "defaultRoles": [
+      "owner"
+    ],
+    "byGroup": {
+      "release": [
+        "reviewer",
+        "owner"
+      ]
+    }
+  },
+  "grants": {
+    "owner": [
+      "*"
+    ],
+    "editor": [
+      "read",
+      "write",
+      "build",
+      "deliver",
+      "release",
+      "knowledge"
+    ],
+    "reviewer": [
+      "read",
+      "review"
+    ],
+    "viewer": [
+      "read"
+    ]
+  },
+  "formatLocks": [
+    {
+      "extensions": [
+        ".pdf"
+      ],
+      "channel": "report.export",
+      "reason": "交付 PDF 必须由导出通道生成"
+    }
+  ],
+  "actions": [
+    {
+      "id": "workspace.list",
+      "title": "列出工作区",
+      "description": "列出工作区目录内容（只读）",
+      "keywords": [
+        "列出文件",
+        "查看工作区",
+        "目录",
+        "list",
+        "files"
+      ],
+      "group": "read",
+      "zone": "green",
+      "speedBudgetMs": 2000,
+      "energyWeight": 1,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "workspace.read",
+      "title": "读取工作区文件",
+      "description": "读取工作区内的文本文件（只读）",
+      "keywords": [
+        "读取文件",
+        "查看文件",
+        "read file"
+      ],
+      "group": "read",
+      "zone": "green",
+      "speedBudgetMs": 2000,
+      "energyWeight": 1,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "doc.read",
+      "title": "读取文档",
+      "description": "读取文档内容（只读）",
+      "keywords": [
+        "读取文档",
+        "查看文档",
+        "read doc"
+      ],
+      "group": "read",
+      "zone": "green",
+      "speedBudgetMs": 2000,
+      "energyWeight": 1,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "doc.write",
+      "title": "写入文档",
+      "description": "写入或覆盖工作区内的文本文档",
+      "keywords": [
+        "写文档",
+        "写入",
+        "保存文档",
+        "write doc"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "asset.import",
+      "title": "导入资产",
+      "description": "把文本资产导入工作区",
+      "keywords": [
+        "导入资产",
+        "素材",
+        "import asset"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "project.build",
+      "title": "构建项目",
+      "description": "生成交付构建清单",
+      "keywords": [
+        "构建",
+        "打包",
+        "build"
+      ],
+      "group": "build",
+      "zone": "yellow",
+      "speedBudgetMs": 120000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "output": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "team.invite",
+      "title": "邀请成员",
+      "description": "邀请一名成员加入工作区",
+      "keywords": [
+        "邀请",
+        "成员",
+        "invite"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "minLength": 3
+          },
+          "role": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "review.request",
+      "title": "发起评审",
+      "description": "请求评审者检查当前产物",
+      "keywords": [
+        "评审",
+        "复核",
+        "review"
+      ],
+      "group": "review",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "target": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "target"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.add",
+      "title": "登记知识",
+      "description": "把一条经验或标准作业程序写入知识层",
+      "keywords": [
+        "记住",
+        "登记知识",
+        "经验",
+        "knowledge"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "string"
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "deprecated"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contradicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "lesson.add",
+      "title": "登记失败教训",
+      "description": "把一次失败的原因与规避路径写入失败教训库",
+      "keywords": [
+        "教训",
+        "失败",
+        "复盘",
+        "lesson"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "deprecated"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contradicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.merge",
+      "title": "合并知识",
+      "description": "把重复单元合并到规范单元，合并别名/标签/推荐动作并废弃重复项",
+      "keywords": [
+        "合并知识",
+        "去重",
+        "merge"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "canonicalId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "duplicateIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonicalId",
+          "duplicateIds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.deprecate",
+      "title": "废弃知识",
+      "description": "把知识单元标记为 deprecated，可指定替代单元",
+      "keywords": [
+        "废弃知识",
+        "下线知识",
+        "deprecate"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string"
+          },
+          "supersededBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.review",
+      "title": "审核知识",
+      "description": "把知识单元标记为 active，并记录审核者与置信度",
+      "keywords": [
+        "审核知识",
+        "确认知识",
+        "review"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "report.export",
+      "title": "导出交付报告",
+      "description": "通过交付通道生成报告",
+      "keywords": [
+        "导出报告",
+        "交付",
+        "export report"
+      ],
+      "group": "deliver",
+      "zone": "yellow",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "release.prepare",
+      "title": "准备发布包",
+      "description": "生成发布包；需要 reviewer 与 owner 双角色批准",
+      "keywords": [
+        "准备发布",
+        "发布包",
+        "prepare release"
+      ],
+      "group": "release",
+      "zone": "yellow",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "release.publish",
+      "title": "对外发布",
+      "description": "对外发布产物（需要评审者与所有者双批准，但仍是红灯）",
+      "keywords": [
+        "发布",
+        "上线",
+        "publish"
+      ],
+      "group": "release",
+      "zone": "red",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3
+    },
+    {
+      "id": "role.grant",
+      "title": "变更角色",
+      "description": "变更成员权限（权限变更不进自主执行）",
+      "keywords": [
+        "授权",
+        "角色",
+        "grant role"
+      ],
+      "group": "admin",
+      "zone": "red",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "type": "string",
+            "minLength": 1
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "user",
+          "role"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "workspace.delete",
+      "title": "删除工作区内容",
+      "description": "删除文件或目录（破坏性动作）",
+      "keywords": [
+        "删除",
+        "清除",
+        "delete"
+      ],
+      "group": "destructive",
+      "zone": "red",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "seed:roles",
+      "kind": "seed",
+      "title": "角色与能力组",
+      "summary": "viewer 只读；editor 写与构建；reviewer 评审；owner 全量",
+      "body": "能力组是源头授权单位。viewer 只有 read；editor 有 read/write/build/deliver；reviewer 有 read/review；owner 拥有全部能力。",
+      "tags": [
+        "roles",
+        "grants"
+      ]
+    },
+    {
+      "id": "seed:dual-approval",
+      "kind": "seed",
+      "title": "发布双批准",
+      "summary": "release 组需要 reviewer 与 owner 两个不同角色批准",
+      "body": "发布类动作的审批策略要求 reviewer 与 owner 分别批准；同一角色重复批准不计数。",
+      "tags": [
+        "approval",
+        "release"
+      ],
+      "uses": [
+        "release.prepare",
+        "release.publish"
+      ]
+    },
+    {
+      "id": "seed:permission-change",
+      "kind": "seed",
+      "title": "权限变更是红灯",
+      "summary": "角色授予不能由 Agent 自主执行",
+      "body": "role.grant 属于红灯：权限体系的变化必须由人直接在管理面完成，模型与批准会话都不能放行。",
+      "tags": [
+        "red-line",
+        "admin"
+      ],
+      "uses": [
+        "role.grant"
+      ]
+    }
+  ]
+}

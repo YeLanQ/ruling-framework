@@ -1,0 +1,43 @@
+{
+  "name": "ruling-framework",
+  "version": "0.1.0",
+  "description": "A general adjudication-authority framework for LLM agents: models propose, the system rules, commands execute, gates verify.",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "YeLanQ",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "ruling": "./dist/adapters/cli.js"
+  },
+  "exports": {
+    ".": "./dist/index.js",
+    "./core": "./dist/core/index.js",
+    "./agent": "./dist/agent/index.js",
+    "./packs": "./dist/packs/index.js"
+  },
+  "files": [
+    "dist",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "NOTICE"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "demo": "tsx src/demo/opc-demo.ts",
+    "demo:industrial": "tsx src/demo/industrial-demo.ts",
+    "ruling": "tsx src/adapters/cli.ts",
+    "verify": "pnpm typecheck && pnpm test && pnpm demo && pnpm demo:industrial"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
+  }
+}

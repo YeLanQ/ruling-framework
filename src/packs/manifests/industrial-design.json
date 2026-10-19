@@ -1,0 +1,793 @@
+{
+  "id": "industrial-design",
+  "name": "Industrial Design",
+  "version": "0.1.0",
+  "description": "Industrial/product design reference pack: revisions and provenance, format locks, safety-critical parameters are red.",
+  "roles": [
+    "designer",
+    "engineer",
+    "reviewer",
+    "owner"
+  ],
+  "defaultRole": "designer",
+  "approval": {
+    "ttlMs": 900000,
+    "defaultRoles": [
+      "owner"
+    ],
+    "byGroup": {
+      "release": [
+        "reviewer",
+        "owner"
+      ]
+    }
+  },
+  "grants": {
+    "designer": [
+      "read",
+      "write",
+      "analyze",
+      "knowledge"
+    ],
+    "engineer": [
+      "read",
+      "write",
+      "analyze",
+      "knowledge"
+    ],
+    "reviewer": [
+      "read",
+      "analyze"
+    ],
+    "owner": [
+      "*"
+    ]
+  },
+  "formatLocks": [
+    {
+      "extensions": [
+        ".step",
+        ".stp",
+        ".iges",
+        ".igs",
+        ".stl",
+        ".3mf"
+      ],
+      "channel": "cad.import",
+      "reason": "CAD 二进制/交换格式必须走导入通道"
+    },
+    {
+      "extensions": [
+        ".pdf"
+      ],
+      "channel": "report.export",
+      "reason": "交付 PDF 必须由导出通道生成"
+    },
+    {
+      "extensions": [
+        ".csv",
+        ".xlsx"
+      ],
+      "channel": "bom.update",
+      "reason": "BOM 表格必须由 BOM 通道更新"
+    }
+  ],
+  "actions": [
+    {
+      "id": "design.list",
+      "title": "列出设计对象",
+      "description": "列出工作区内的设计对象（只读）",
+      "keywords": [
+        "列出设计",
+        "设计列表",
+        "list designs"
+      ],
+      "group": "read",
+      "zone": "green",
+      "speedBudgetMs": 2000,
+      "energyWeight": 1
+    },
+    {
+      "id": "design.read",
+      "title": "读取设计对象",
+      "description": "读取设计对象参数、BOM、版本与溯源（只读）",
+      "keywords": [
+        "查看设计",
+        "读取设计",
+        "design read"
+      ],
+      "group": "read",
+      "zone": "green",
+      "speedBudgetMs": 2000,
+      "energyWeight": 1,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "dfm.check",
+      "title": "DFM 检查",
+      "description": "执行可制造性检查（只读建议，不构成发布授权）",
+      "keywords": [
+        "DFM",
+        "可制造性",
+        "检查",
+        "check"
+      ],
+      "group": "analyze",
+      "zone": "green",
+      "speedBudgetMs": 15000,
+      "energyWeight": 1,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "design.create",
+      "title": "创建设计对象",
+      "description": "创建一个草稿设计对象",
+      "keywords": [
+        "创建设计",
+        "新建设计",
+        "create design"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "name"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "design.create_revision",
+      "title": "创建新版本",
+      "description": "为设计对象创建新版本",
+      "keywords": [
+        "新版本",
+        "改版",
+        "revision"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "note": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "design.set_param",
+      "title": "修改设计参数",
+      "description": "修改设计参数；安全关键参数为动态红灯",
+      "keywords": [
+        "修改参数",
+        "设置参数",
+        "参数",
+        "set param"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "dynamicZone": "safetyParam",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value": {
+            "description": "参数值（字符串、数字或布尔）"
+          },
+          "safetyCritical": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "value"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "design.attach_asset",
+      "title": "附加设计资产",
+      "description": "把文本资产附加到设计对象",
+      "keywords": [
+        "附加资产",
+        "附件",
+        "attach asset"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "bom.update",
+      "title": "更新 BOM",
+      "description": "更新物料清单",
+      "keywords": [
+        "BOM",
+        "物料",
+        "bom"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "rows"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "cad.import",
+      "title": "导入 CAD 文件",
+      "description": "通过专用通道导入 CAD 交换格式",
+      "keywords": [
+        "导入CAD",
+        "CAD",
+        "step",
+        "stl"
+      ],
+      "group": "write",
+      "zone": "yellow",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "report.export",
+      "title": "导出设计报告",
+      "description": "通过交付通道生成设计报告",
+      "keywords": [
+        "导出报告",
+        "设计报告",
+        "export report"
+      ],
+      "group": "deliver",
+      "zone": "yellow",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "content": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "content"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.add",
+      "title": "登记设计知识",
+      "description": "登记一条设计经验或规范",
+      "keywords": [
+        "记住",
+        "登记知识",
+        "规范",
+        "knowledge"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "string"
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "deprecated"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contradicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "lesson.add",
+      "title": "登记设计失败教训",
+      "description": "把一次设计失败的原因与规避路径写入失败教训库",
+      "keywords": [
+        "教训",
+        "失败",
+        "复盘",
+        "lesson"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "body": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "uses": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "domain": {
+            "type": "string"
+          },
+          "aliases": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "active",
+              "deprecated"
+            ]
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          },
+          "supersedes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "contradicts": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "body"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.merge",
+      "title": "合并知识",
+      "description": "把重复单元合并到规范单元，合并别名/标签/推荐动作并废弃重复项",
+      "keywords": [
+        "合并知识",
+        "去重",
+        "merge"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "canonicalId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "duplicateIds": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "canonicalId",
+          "duplicateIds"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.deprecate",
+      "title": "废弃知识",
+      "description": "把知识单元标记为 deprecated，可指定替代单元",
+      "keywords": [
+        "废弃知识",
+        "下线知识",
+        "deprecate"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string"
+          },
+          "supersededBy": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "knowledge.review",
+      "title": "审核知识",
+      "description": "把知识单元标记为 active，并记录审核者与置信度",
+      "keywords": [
+        "审核知识",
+        "确认知识",
+        "review"
+      ],
+      "group": "knowledge",
+      "zone": "yellow",
+      "speedBudgetMs": 5000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "confidence": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "design.release",
+      "title": "发布设计",
+      "description": "设计正式发布（不可逆，需人工签核）",
+      "keywords": [
+        "发布设计",
+        "定型",
+        "release"
+      ],
+      "group": "release",
+      "zone": "red",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    },
+    {
+      "id": "safety.signoff",
+      "title": "安全签核",
+      "description": "安全/合规签核（必须由人完成）",
+      "keywords": [
+        "安全签核",
+        "签核",
+        "signoff"
+      ],
+      "group": "signoff",
+      "zone": "red",
+      "speedBudgetMs": 15000,
+      "energyWeight": 3,
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "knowledge": [
+    {
+      "id": "seed:safety-params",
+      "kind": "seed",
+      "title": "安全关键参数是红灯",
+      "summary": "壁厚、安全系数、材料等级、额定载荷等参数变更不得由 Agent 执行",
+      "body": "安全关键参数与认证参数属于动态红灯。即使任务已批准，也必须由具备资质的人在 CAD/PLM 系统内修改并签核。",
+      "tags": [
+        "safety",
+        "red-line"
+      ],
+      "uses": [
+        "design.set_param",
+        "safety.signoff"
+      ]
+    },
+    {
+      "id": "seed:format-locks",
+      "kind": "seed",
+      "title": "格式锁",
+      "summary": "CAD 交换格式走 cad.import，PDF 走 report.export，表格走 bom.update",
+      "body": "通用文本写入不得直接写 .step/.stp/.iges/.igs/.stl/.3mf、.pdf、.csv/.xlsx。它们分别由 cad.import、report.export、bom.update 通道管理。",
+      "tags": [
+        "format",
+        "boundary"
+      ],
+      "uses": [
+        "cad.import",
+        "report.export",
+        "bom.update"
+      ]
+    },
+    {
+      "id": "seed:revision-provenance",
+      "kind": "seed",
+      "title": "版本与溯源",
+      "summary": "每次参数/BOM/附件变更都记录 before/after 哈希",
+      "body": "设计变更必须写入 revision 与 provenance：时间、动作、执行者角色、修订号、变更前后哈希。导出报告时带上溯源。",
+      "tags": [
+        "provenance",
+        "revision"
+      ],
+      "uses": [
+        "design.create_revision",
+        "design.set_param",
+        "bom.update",
+        "design.attach_asset"
+      ]
+    },
+    {
+      "id": "seed:dfm-advisory",
+      "kind": "seed",
+      "title": "DFM 只是建议",
+      "summary": "可制造性检查不能替代发布签核",
+      "body": "dfm.check 是只读建议，不构成发布授权。发布与安全签核是红灯，只能由人完成。",
+      "tags": [
+        "dfm",
+        "release"
+      ],
+      "uses": [
+        "dfm.check",
+        "design.release"
+      ]
+    }
+  ]
+}

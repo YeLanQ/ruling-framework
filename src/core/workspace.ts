@@ -57,6 +57,13 @@ export class Workspace implements WorkspaceApi {
     if (!raw || raw === ".") return this.root;
     if (raw.includes("\0")) throw new WorkspaceError("PATH_INVALID", "路径包含非法字符");
     if (raw.includes("\\")) throw new WorkspaceError("PATH_INVALID", "工作区路径必须使用 / 分隔符");
+    // `isAbsolute` only recognizes POSIX `/`-rooted paths on Linux/macOS, so a
+    // Windows drive-letter path like `C:/temp/x.txt` would slip through on CI.
+    // Reject the drive-letter form on every platform to keep the data boundary
+    // independent of the host OS.
+    if (/^[a-zA-Z]:[\\/]/.test(raw)) {
+      throw new WorkspaceError("PATH_INVALID", "工作区路径必须为相对路径");
+    }
     if (isAbsolute(raw)) throw new WorkspaceError("PATH_INVALID", "工作区路径必须为相对路径");
     const parts = raw.split("/");
     if (parts.some((part) => part === "..")) {

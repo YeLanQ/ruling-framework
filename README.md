@@ -121,7 +121,7 @@ ruling-framework/
 │  ├─ adapters/        # CLI / HTTP / MCP
 │  ├─ demo/            # 两个端到端演示
 │  └─ test-support/    # 测试临时目录
-├─ docs/               # 10 篇设计文档
+├─ docs/               # 11 篇设计文档
 └─ package.json
 ```
 
